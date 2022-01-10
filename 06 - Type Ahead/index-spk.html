@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Type Ahead 👀</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <form class="search-form">
+    <input type="text" class="search" placeholder="City or State">
+    <ul class="suggestions">
+      <li>Filter for a city</li>
+      <li>or a state</li>
+    </ul>
+  </form>
+<script>
+
+const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
+const places =[];
+
+function numberWithCommas(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+fetch(endpoint)
+  .then(response => response.json())
+  .then(data => places.push(...data))
+
+console.log(places);
+
+function filterPlaces(stringToSearch, places) {
+  return places.filter((place) => {
+    // problem with below: case sensitive!
+    // return city.city.includes(stringToSearch) || city.state.includes(stringToSearch)
+    const rexEx = new RegExp(stringToSearch, 'gi');
+    return place.city.match(rexEx) || place.state.match(rexEx);
+  })
+}
+
+function displayMatches(e) {
+  const matchArray = filterPlaces(this.value, places);
+  const html = matchArray.map(place => {
+    let city = place.city;
+    let state = place.state;
+    const population = numberWithCommas(place.population);
+
+    const regEx = new RegExp(this.value, 'gi');
+    const cityMatch = city.match(regEx);
+    const stateMatch = state.match(regEx);
+
+    if (cityMatch) {
+      city = city.replace(regEx, `<span class="hl">${cityMatch[0]}</span>`);
+    }
+
+    if (stateMatch) {
+      state = state.replace(regEx, `<span class="hl">${stateMatch[0]}</span>`);
+    }
+
+    return `
+        <li>
+            <span class="name">${city}, ${state}</span>
+            <span class="population">${population}</span>
+        </li>`
+  }).join('');
+
+  suggestions.innerHTML = html;
+
+}
+
+const search = document.querySelector('.search');
+const suggestions = document.querySelector('.suggestions');
+
+search.addEventListener('keyup', displayMatches);
+
+
+</script>
+</body>
+</html>
