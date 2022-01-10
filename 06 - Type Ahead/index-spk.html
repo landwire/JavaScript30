@@ -39,33 +39,38 @@ function filterPlaces(stringToSearch, places) {
 }
 
 function displayMatches(e) {
-  const matchArray = filterPlaces(this.value, places);
-  const html = matchArray.map(place => {
-    let city = place.city;
-    let state = place.state;
-    const population = numberWithCommas(place.population);
+  let html;
 
-    const regEx = new RegExp(this.value, 'gi');
-    const cityMatch = city.match(regEx);
-    const stateMatch = state.match(regEx);
+  if (this.value.length < 3) {
+    html = `<li><span>Please type 3 letters</span></li>`;
+  } else {
+    const matchArray = filterPlaces(this.value, places);
+    html = matchArray.map(place => {
+      let city = place.city;
+      let state = place.state;
+      const population = numberWithCommas(place.population);
 
-    if (cityMatch) {
-      city = city.replace(regEx, `<span class="hl">${cityMatch[0]}</span>`);
-    }
+      const regEx = new RegExp(this.value, 'gi');
+      const cityMatch = city.match(regEx);
+      const stateMatch = state.match(regEx);
 
-    if (stateMatch) {
-      state = state.replace(regEx, `<span class="hl">${stateMatch[0]}</span>`);
-    }
+      if (cityMatch) {
+        city = city.replace(regEx, `<span class="hl">${cityMatch[0]}</span>`);
+      }
 
-    return `
+      if (stateMatch) {
+        state = state.replace(regEx, `<span class="hl">${stateMatch[0]}</span>`);
+      }
+
+      return `
         <li>
             <span class="name">${city}, ${state}</span>
             <span class="population">${population}</span>
         </li>`
-  }).join('');
+    }).join('');
+  }
 
   suggestions.innerHTML = html;
-
 }
 
 const search = document.querySelector('.search');
