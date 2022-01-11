@@ -18,21 +18,36 @@
 
 const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
 const places =[];
+let closestCities;
+// fill places with data
+fetch(endpoint)
+        .then(response => response.json())
+        .then(data => places.push(...data))
+
+function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1);
+  var a =
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+          Math.sin(dLon/2) * Math.sin(dLon/2)
+  ;
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
 
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-fetch(endpoint)
-  .then(response => response.json())
-  .then(data => places.push(...data))
-
-console.log(places);
-
 function filterPlaces(stringToSearch, places) {
   return places.filter((place) => {
-    // problem with below: case sensitive!
-    // return city.city.includes(stringToSearch) || city.state.includes(stringToSearch)
     const rexEx = new RegExp(stringToSearch, 'gi');
     return place.city.match(rexEx) || place.state.match(rexEx);
   })
@@ -63,18 +78,49 @@ function displayMatches(e) {
       }
 
       return `
-        <li>
+        <li data-currentPlace='${JSON.stringify(place)}'>
             <span class="name">${city}, ${state}</span>
             <span class="population">${population}</span>
+            <button class="closestCities">Closest Cities</button>
         </li>`
     }).join('');
   }
 
   suggestions.innerHTML = html;
+
+  closestCities = document.querySelectorAll('.closestCities');
+
+  if (closestCities) {
+    closestCities.forEach(button => button.addEventListener('click', displayClosestPlaces));
+  }
+}
+
+function calculateClosestPlaces(currentPlace, places) {
+  // add distance to object
+  const placesWithDistance = places.map((place) => {
+    const distance = getDistanceFromLatLonInKm(currentPlace.latitude, currentPlace.longitude, place.latitude, place.longitude )
+    return {...place, distance: parseFloat(distance.toFixed(2))};
+  })
+
+  // sort by distance
+  const sorted = placesWithDistance.sort((a, b) => a.distance - b.distance);
+
+  // return only a subset of 10 cities
+  return sorted.splice(1, 10);
+}
+
+function displayClosestPlaces(e) {
+  e.preventDefault();
+  // 2 steps necessary
+  let currentPlace = e.currentTarget.closest('li').dataset.currentplace;
+  currentPlace = JSON.parse(currentPlace);
+  const closestPlaces = calculateClosestPlaces(currentPlace, places);
+  console.table(closestPlaces);
 }
 
 const search = document.querySelector('.search');
 const suggestions = document.querySelector('.suggestions');
+
 
 search.addEventListener('keyup', displayMatches);
 
