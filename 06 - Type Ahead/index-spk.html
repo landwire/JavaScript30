@@ -4,9 +4,42 @@
   <meta charset="UTF-8">
   <title>Type Ahead 👀</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .modal {
+      background: rgba(0, 0, 0, 0.8);
+      position: fixed;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      width: 100vw;
+      height: 100vh;
+      transform: scale(0.5);
+      transition: all 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+
+    .modal.open {
+      visibility: visible;
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: all;
+    }
+
+    .modal__inner {
+      width: 80%;
+      height: 80%;
+      background: white;
+    }
+
+
+  </style>
 </head>
 <body>
-
   <form class="search-form">
     <input type="text" class="search" placeholder="City or State">
     <ul class="suggestions">
@@ -14,11 +47,25 @@
       <li>or a state</li>
     </ul>
   </form>
+  <div class="modal">
+    <div class="modal__inner">
+      <ul>
+        <li>Some</li>
+        <li>Random</li>
+        <li>Content</li>
+      </ul>
+    </div>
+  </div>
 <script>
 
 const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
 const places =[];
 let closestCities;
+const search = document.querySelector('.search');
+const suggestions = document.querySelector('.suggestions');
+const modal = document.querySelector('.modal');
+const modalInner = modal.querySelector('.modal__inner');
+
 // fill places with data
 fetch(endpoint)
         .then(response => response.json())
@@ -111,19 +158,30 @@ function calculateClosestPlaces(currentPlace, places) {
 
 function displayClosestPlaces(e) {
   e.preventDefault();
+  let html = '<ul>';
   // 2 steps necessary
   let currentPlace = e.currentTarget.closest('li').dataset.currentplace;
   currentPlace = JSON.parse(currentPlace);
   const closestPlaces = calculateClosestPlaces(currentPlace, places);
-  console.table(closestPlaces);
+
+  html = html + closestPlaces.map((place) => {
+    return `
+      <li>
+        <span>${place.city}, ${place.state}</span>
+        <span>(${place.population})</span>
+        <span>${place.distance} km</span>
+      </li>
+    `
+  }).join('') + '</ul>';
+
+  modalInner.innerHTML = html;
+  modal.classList.add('open');
 }
 
-const search = document.querySelector('.search');
-const suggestions = document.querySelector('.suggestions');
-
-
 search.addEventListener('keyup', displayMatches);
-
+modal.addEventListener('click', () => {
+  modal.classList.remove('open');
+});
 
 </script>
 </body>
